@@ -23,15 +23,14 @@ logger = logging.getLogger(__name__)
 def main(args):
     shape = gpd.read_file(args.shapefile).to_crs("EPSG:4326")
 
-    maap = MAAP()
-    username = maap.profile.account_info()["username"]
-    temp_dir = "/.tmp/duckdb_tmp"
+    temp_dir = ".tmp/duckdb_tmp"
     os.makedirs(temp_dir, exist_ok=True)
     con = ducky.init_duckdb(temp_dir)
     data_spec = ducky.data_spec(args.bucket, args.prefix)
+    columns = [col.strip() for col in args.columns.split(",")] if args.columns else []
 
     res = crossovers.find_repeat_footprints(
-        con, data_spec, shape, args.distance_m, args.filters, args.columns
+        con, data_spec, shape, args.distance_m, args.filters, columns
     )
     logger.info("Found %d repeat footprint pairs.", len(res))
 
@@ -69,8 +68,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--columns",
-        nargs="*",
-        help="List of columns to include in the output data. Shot number, latitude, longitude, and metric distance between footprints are always included.",
+        type=str,
+        required=False,
+        help="Comma-separated list of columns to include in the output data. Shot number, latitude, longitude, and metric distance between footprints are always included.",
     )
     parser.add_argument(
         "--filters",

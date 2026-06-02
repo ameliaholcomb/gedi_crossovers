@@ -26,8 +26,8 @@ inputs:
     name: distance_m
     required: true
   - default: ''
-    description: Space-separated list of additional columns to include in the output
-      (e.g. "agbd_l4a rh_98_l2a"). Shot number, lat, lon, and distance_m are always
+    description: Comma-separated list of additional columns to include in the output
+      (e.g. "agbd_l4a,rh_98_l2a"). Shot number, lat, lon, and distance_m are always
       included.
     name: columns
     required: false
