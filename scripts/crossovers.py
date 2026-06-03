@@ -95,7 +95,8 @@ def find_repeat_footprints(
     con.execute("LOAD h3;")
 
     # Build column selection
-    base_columns = ["shot_number", "lat_lowestmode", "lon_lowestmode"]
+    # absolute_time is always fetched for STAC temporal metadata
+    base_columns = ["shot_number", "lat_lowestmode", "lon_lowestmode", "absolute_time"]
     if columns:
         select_columns = base_columns + [
             c for c in columns if c not in base_columns
@@ -136,15 +137,12 @@ def find_repeat_footprints(
 
     # 3. Candidate pairs via join on candidate cell
 
-    # Build select clause for joined output
-    join_cols_1 = ""
-    join_cols_2 = ""
-    if columns:
-        join_cols_1 = ", " + ", ".join([f"t1.{c} AS t1_{c}" for c in columns])
-        join_cols_2 = ", " + ", ".join([f"t2.{c} AS t2_{c}" for c in columns])
-
-    joined_cols = ", ".join(
-        [f"t1_{c}" for c in columns] + [f"t2_{c}" for c in columns]
+    # Build select clause for joined output from all columns (base + user).
+    all_join_columns = base_columns + [c for c in (columns or []) if c not in base_columns]
+    join_cols_1 = ", ".join([f"t1.{c} AS t1_{c}" for c in all_join_columns])
+    join_cols_2 = ", ".join([f"t2.{c} AS t2_{c}" for c in all_join_columns])
+    all_output_cols = ", ".join(
+        [f"t1_{c}" for c in all_join_columns] + [f"t2_{c}" for c in all_join_columns]
     )
 
     # Note: ST_Point takes (lat, lon) order for our data
@@ -152,13 +150,7 @@ def find_repeat_footprints(
         CREATE OR REPLACE TEMP TABLE pairs AS
         WITH joined AS (
             SELECT
-                t1.shot_number AS t1_shot_number,
-                t2.shot_number AS t2_shot_number,
-                t1.lat_lowestmode AS t1_lat_lowestmode,
-                t1.lon_lowestmode AS t1_lon_lowestmode,
-                t2.lat_lowestmode AS t2_lat_lowestmode,
-                t2.lon_lowestmode AS t2_lon_lowestmode
-                {join_cols_1}
+                {join_cols_1},
                 {join_cols_2}
             FROM pts_expanded t1
             JOIN pts t2
@@ -168,17 +160,11 @@ def find_repeat_footprints(
         ),
         distances AS (
             SELECT
-                t1_shot_number,
-                t2_shot_number,
-                t1_lat_lowestmode,
-                t1_lon_lowestmode,
-                t2_lat_lowestmode,
-                t2_lon_lowestmode,
+                {all_output_cols},
                 ST_Distance_Spheroid(
                     ST_Point(t1_lat_lowestmode, t1_lon_lowestmode),
                     ST_Point(t2_lat_lowestmode, t2_lon_lowestmode)
-                ) AS distance_m,
-                {joined_cols}
+                ) AS distance_m
             FROM joined
         )
         SELECT * FROM distances
