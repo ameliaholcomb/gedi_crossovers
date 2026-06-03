@@ -17,6 +17,7 @@ dependencies:
   - s3fs
   - h3-py
   - numpy
+  - rasterio
   - tqdm
   - ipython
   - ipykernel

@@ -26,6 +26,7 @@ prefix=$2
 distance_m=$3
 columns=${4:-}
 filters=${5:-}
+output_cog=${6:-}
 
 # Find the region file from the input directory (shapefile, GeoJSON, GPKG, etc.)
 shapefile=$(ls ${INPUT_DIR}/* | head -1)
@@ -44,6 +45,12 @@ if [ -n "${filters}" ]; then
     filters_arg=("--filters" "${filters}")
 fi
 
+# output_cog: if non-empty, write a COG of per-column differences to the output directory
+cog_arg=()
+if [ -n "${output_cog}" ]; then
+    cog_arg=("--cog_outfile" "output/crossovers_diffs.tif")
+fi
+
 # Call the script using the absolute paths.
 # Use the updated environment when calling 'conda run'.
 # This lets us run the same way in a Terminal as in DPS.
@@ -57,4 +64,5 @@ conda run --live-stream --name pyduck python ${basedir}/../scripts/find_crossove
     --distance_m "${distance_m}" \
     --outfile output/crossovers.parquet \
     "${columns_args[@]}" \
-    "${filters_arg[@]}"
+    "${filters_arg[@]}" \
+    "${cog_arg[@]}"
