@@ -1,7 +1,7 @@
 algorithm_description: Find pairs of repeat GEDI footprints (crossovers) within a
   region
 algorithm_name: gedi-find-crossovers
-algorithm_version: amelia-deploy-o315IMAU
+algorithm_version: deploy-qzxuRl4S
 build_command: gedi_crossovers/build/build-env.sh
 disk_space: 10GB
 docker_container_url: mas.maap-project.org/root/maap-workspaces/custom_images/maap_base:v5.0.0
@@ -12,38 +12,44 @@ inputs:
       \ any CRS \u2014 will be reprojected to EPSG:4326."
     name: shapefile
     optional: false
+    test_value: s3://maap-ops-workspace/shared/ameliah/shapefiles/sabah_box.geojson
   positional:
   - default: maap-ops-workspace
     description: AWS S3 bucket in which the tiled GEDI database is stored.
     name: bucket
     required: true
+    test_value: maap-ops-workspace
   - default: shared/ameliah/tiled_gedi
     description: AWS S3 prefix in which the tiled GEDI database is stored.
     name: prefix
     required: true
+    test_value: shared/ameliah/tiled_gedi
   - default: '40'
     description: Maximum distance in meters between footprint centers for a pair to
       be included in the output.
     name: distance_m
     required: true
+    test_value: '40'
   - default: ''
     description: Comma-separated list of additional columns to include in the output
-      (e.g. "agbd_l4a,rh_98_l2a"). Shot number, lat, lon, and distance_m are always
-      included.
+      (e.g. "agbd,rh_98"). Shot number, lat, lon, and distance_m are always included.
     name: columns
     required: false
+    test_value: agbd,rh_98
   - default: ''
     description: SQL WHERE clause conditions to filter footprints before searching
       for crossovers (e.g. "l4_quality_flag = 1 AND sensitivity > 0.95"). Do not include
       the WHERE keyword.
     name: filters
     required: false
+    test_value: l4_quality_flag = 1 AND sensitivity > 0.98
   - default: ''
     description: If non-empty, also write a Cloud Optimized GeoTIFF (output/crossovers_diffs.tif)
-      with one band per column in `columns`, each containing the difference (t2 - t1)
-      rasterized as 25 m diameter circles at the t2 footprint location.
+      with one band per column in `columns`, each containing the difference (t2 -
+      t1) rasterized as 25 m diameter circles at the t2 footprint location.
     name: output_cog
     required: false
+    test_value: 'true'
 queue: maap-dps-worker-8gb
 repository_url: https://github.com/ameliaholcomb/gedi_crossovers.git
 run_command: gedi_crossovers/build/run_dps_find_crossovers.sh
